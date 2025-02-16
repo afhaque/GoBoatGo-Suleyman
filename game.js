@@ -14,7 +14,7 @@ const gameState = {
         height: 30,
         speed: 6,
         fruits: 0,
-        hearts: 6
+        hearts: 5
     },
     port: {
         x: 30,
