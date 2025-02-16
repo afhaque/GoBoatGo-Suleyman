@@ -12,9 +12,9 @@ const gameState = {
         y: canvas.height / 2,
         width: 50,
         height: 30,
-        speed:4,
+        speed: 6,
         fruits: 0,
-        hearts: 3
+        hearts: 5
     },
     port: {
         x: 30,
@@ -141,7 +141,7 @@ function resetGame() {
     gameState.boat.x = 50;
     gameState.boat.y = canvas.height / 2;
     gameState.boat.fruits = 0;
-    gameState.boat.hearts = 3;
+    gameState.boat.hearts = 5;
     updateStats();
 }
 
