@@ -161,7 +161,7 @@ function draw() {
     ctx.fillRect(gameState.port.x, gameState.port.y, gameState.port.width, gameState.port.height);
     ctx.fillStyle = 'white';
     ctx.font = '16px Arial';
-    ctx.fillText('Port', gameState.port.x + 10, 30);
+    ctx.fillText('Port', gameState.port.x + 10, gameState.port.y + gameState.port.height + 20);
 
     // Draw fruit island
     ctx.fillStyle = 'green';
