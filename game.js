@@ -31,7 +31,10 @@ const gameState = {
     obstacles: [
         { type: 'shark', x: 300, y: 300, speed: 2 },
         { type: 'tornado', x: 500, y: 200, speed: 4 },
-        { type: 'wave', x: 400, y: 400, speed: 3 }
+        { type: 'wave', x: 400, y: 400, speed: 3 },
+        { type: 'shark', x: 200, y: 150, speed: 3 },
+        { type: 'wave', x: 600, y: 250, speed: 2 },
+        { type: 'tornado', x: 350, y: 450, speed: 5 }
     ]
 };
 
