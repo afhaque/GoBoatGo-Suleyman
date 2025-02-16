@@ -157,14 +157,14 @@ function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Draw port
-    ctx.fillStyle = 'green';
+    ctx.fillStyle = 'gray';
     ctx.fillRect(gameState.port.x, gameState.port.y, gameState.port.width, gameState.port.height);
     ctx.fillStyle = 'white';
     ctx.font = '16px Arial';
     ctx.fillText('Port', gameState.port.x + 10, gameState.port.y + gameState.port.height + 20);
 
     // Draw fruit island
-    ctx.fillStyle = 'darkred';
+    ctx.fillStyle = 'green';
     ctx.fillRect(gameState.fruitIsland.x, gameState.fruitIsland.y, gameState.fruitIsland.width, gameState.fruitIsland.height);
     ctx.fillStyle = 'white';
     ctx.font = '16px Arial';
