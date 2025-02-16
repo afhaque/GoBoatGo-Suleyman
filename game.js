@@ -29,9 +29,9 @@ const gameState = {
         height: 100
     },
     obstacles: [
-        { type: 'shark', x: 300, y: 300, speed: 1 },
-        { type: 'tornado', x: 500, y: 200, speed: 3 },
-        { type: 'wave', x: 400, y: 400, speed: 1.5 }
+        { type: 'shark', x: 300, y: 300, speed: 2 },
+        { type: 'tornado', x: 500, y: 200, speed: 4 },
+        { type: 'wave', x: 400, y: 400, speed: 3 }
     ]
 };
 
@@ -69,19 +69,9 @@ function moveBoat() {
 
 function moveObstacles() {
     gameState.obstacles.forEach(obstacle => {
-        switch(obstacle.type) {
-            case 'shark':
-                obstacle.y += obstacle.speed;
-                if (obstacle.y > canvas.height || obstacle.y < 0) obstacle.speed *= -1;
-                break;
-            case 'tornado':
-                obstacle.x += obstacle.speed;
-                if (obstacle.x > canvas.width || obstacle.x < 0) obstacle.speed *= -1;
-                break;
-            case 'wave':
-                obstacle.x -= obstacle.speed;
-                if (obstacle.x < 0) obstacle.x = canvas.width;
-                break;
+        obstacle.y += obstacle.speed;
+        if (obstacle.y > canvas.height - 30 || obstacle.y < 0) {
+            obstacle.speed *= -1;
         }
     });
 }
