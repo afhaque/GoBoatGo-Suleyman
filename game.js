@@ -193,4 +193,5 @@ function gameLoop() {
 }
 
 // Start the game
+updateStats(); // Initialize the visual display of hearts
 gameLoop();
