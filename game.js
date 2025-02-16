@@ -12,15 +12,15 @@ const gameState = {
         y: canvas.height / 2,
         width: 50,
         height: 30,
-        speed: 5,
+        speed:4,
         fruits: 0,
         hearts: 3
     },
     port: {
         x: 30,
-        y: canvas.height / 2 - 50,
+        y: 0,
         width: 60,
-        height: 100
+        height: 900
     },
     fruitIsland: {
         x: canvas.width - 90,
@@ -29,7 +29,7 @@ const gameState = {
         height: 100
     },
     obstacles: [
-        { type: 'shark', x: 300, y: 300, speed: 2 },
+        { type: 'shark', x: 300, y: 300, speed: 1 },
         { type: 'tornado', x: 500, y: 200, speed: 3 },
         { type: 'wave', x: 400, y: 400, speed: 1.5 }
     ]
