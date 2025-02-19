@@ -30,7 +30,7 @@ const gameState = {
         y: canvas.height / 2,
         width: 50,
         height: 30,
-        speed: 6,
+        speed: 3,
         fruits: 0,
         hearts: 5,
         portFruits: 0,
