@@ -11,6 +11,16 @@ backgroundMusic.loop = true;
 
 // Game state
 const gameState = {
+    repairBoat: {
+        x: 0,
+        y: 0,
+        width: 40,
+        height: 40,
+        active: false,
+        lastSpawnTime: 0,
+        spawnInterval: 15000, // Spawn every 15 seconds
+        duration: 5000 // Stay for 5 seconds
+    },
     boat: {
         x: 50,
         y: canvas.height / 2,
@@ -97,6 +107,11 @@ function moveObstacles() {
 }
 
 function checkCollisions() {
+    // Check repair boat collision
+    if (gameState.repairBoat.active && isColliding(gameState.boat, gameState.repairBoat)) {
+        handleRepairBoatCollision();
+    }
+
     // Check fruit island collision
     if (isColliding(gameState.boat, gameState.fruitIsland) && gameState.boat.fruits < 3) {
         gameState.boat.fruits = 3;
@@ -209,6 +224,18 @@ function draw() {
         ctx.fillRect(gameState.boat.x, gameState.boat.y, gameState.boat.width, gameState.boat.height);
     }
 
+    // Draw repair boat if active
+    if (gameState.repairBoat.active) {
+        ctx.fillStyle = 'pink';
+        ctx.fillRect(gameState.repairBoat.x, gameState.repairBoat.y, 
+                    gameState.repairBoat.width, gameState.repairBoat.height);
+        
+        // Draw heart symbol on repair boat
+        ctx.fillStyle = 'red';
+        ctx.font = '20px Arial';
+        ctx.fillText('❤️', gameState.repairBoat.x + 10, gameState.repairBoat.y + 25);
+    }
+
     // Draw obstacles
     gameState.obstacles.forEach(obstacle => {
         switch(obstacle.type) {
@@ -226,9 +253,40 @@ function draw() {
     });
 }
 
+function updateRepairBoat() {
+    const currentTime = Date.now();
+    
+    // If repair boat is active, check if it should despawn
+    if (gameState.repairBoat.active) {
+        if (currentTime - gameState.repairBoat.lastSpawnTime >= gameState.repairBoat.duration) {
+            gameState.repairBoat.active = false;
+        }
+    } 
+    // If repair boat is not active, check if it should spawn
+    else if (currentTime - gameState.repairBoat.lastSpawnTime >= gameState.repairBoat.spawnInterval) {
+        spawnRepairBoat();
+    }
+}
+
+function spawnRepairBoat() {
+    gameState.repairBoat.x = Math.random() * (canvas.width - gameState.repairBoat.width);
+    gameState.repairBoat.y = Math.random() * (canvas.height - gameState.repairBoat.height);
+    gameState.repairBoat.active = true;
+    gameState.repairBoat.lastSpawnTime = Date.now();
+}
+
+function handleRepairBoatCollision() {
+    if (gameState.boat.hearts < 5) {
+        gameState.boat.hearts++;
+        updateStats();
+    }
+    gameState.repairBoat.active = false;
+}
+
 function gameLoop() {
     moveBoat();
     moveObstacles();
+    updateRepairBoat();
     checkCollisions();
     draw();
     requestAnimationFrame(gameLoop);
