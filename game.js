@@ -9,6 +9,10 @@ canvas.height = 600;
 const backgroundMusic = new Audio('assets/game_music.mp3');
 backgroundMusic.loop = true;
 
+// Load images
+const portImage = new Image();
+portImage.src = 'assets/Port.png';
+
 // Game state
 const gameState = {
     repairBoat: {
@@ -205,11 +209,7 @@ function draw() {
     }
 
     // Draw port
-    ctx.fillStyle = 'gray';
-    ctx.fillRect(gameState.port.x, gameState.port.y, gameState.port.width, gameState.port.height);
-    ctx.fillStyle = 'white';
-    ctx.font = '16px Arial';
-    ctx.fillText('Port', gameState.port.x + 10, gameState.port.y + gameState.port.height + 20);
+    ctx.drawImage(portImage, gameState.port.x, gameState.port.y, gameState.port.width, gameState.port.height);
 
     // Draw fruit island
     ctx.fillStyle = 'green';
