@@ -41,9 +41,9 @@ const gameState = {
     },
     port: {
         x: 30,
-        y: canvas.height / 2 - 50,
-        width: 60,
-        height: 100
+        y: canvas.height / 2 - 100,
+        width: 100,
+        height: 200
     },
     fruitIsland: {
         x: canvas.width - 90,
