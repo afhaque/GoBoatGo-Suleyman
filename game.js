@@ -292,12 +292,19 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-// Start the game
-updateStats(); // Initialize the visual display of hearts
-backgroundMusic.play().catch(error => {
-    console.log("Audio playback failed:", error);
-});
-gameLoop();
+// Wait for port image to load before starting the game
+portImage.onload = () => {
+    updateStats(); // Initialize the visual display of hearts
+    // Start background music with user interaction
+    document.addEventListener('click', () => {
+        if (backgroundMusic.paused) {
+            backgroundMusic.play().catch(error => {
+                console.log("Audio playback failed:", error);
+            });
+        }
+    }, { once: true });
+    gameLoop();
+};
 
 // Add music controls
 document.addEventListener('keydown', (e) => {
