@@ -5,6 +5,10 @@ const ctx = canvas.getContext('2d');
 canvas.width = 800;
 canvas.height = 600;
 
+// Create background music
+const backgroundMusic = new Audio('assets/game_music.mp3');
+backgroundMusic.loop = true;
+
 // Game state
 const gameState = {
     boat: {
@@ -208,4 +212,18 @@ function gameLoop() {
 
 // Start the game
 updateStats(); // Initialize the visual display of hearts
+backgroundMusic.play().catch(error => {
+    console.log("Audio playback failed:", error);
+});
 gameLoop();
+
+// Add music controls
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'm') {
+        if (backgroundMusic.paused) {
+            backgroundMusic.play();
+        } else {
+            backgroundMusic.pause();
+        }
+    }
+});
