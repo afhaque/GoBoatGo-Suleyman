@@ -14,7 +14,8 @@ const gameState = {
         height: 30,
         speed: 6,
         fruits: 0,
-        hearts: 5
+        hearts: 5,
+        portFruits: 0
     },
     port: {
         x: 30,
@@ -87,10 +88,17 @@ function checkCollisions() {
     }
 
     // Check port collision
-    if (isColliding(gameState.boat, gameState.port) && gameState.boat.fruits === 3) {
-        // Win condition
-        alert('You won! You delivered all fruits safely!');
-        resetGame();
+    if (isColliding(gameState.boat, gameState.port) && gameState.boat.fruits > 0) {
+        // Add fruits to port count
+        gameState.boat.portFruits += gameState.boat.fruits;
+        gameState.boat.fruits = 0;
+        updateStats();
+        
+        // Check win condition
+        if (gameState.boat.portFruits >= 25) {
+            alert('You won! You delivered 25 fruits safely!');
+            resetGame();
+        }
     }
 
     // Check obstacle collisions
@@ -118,7 +126,11 @@ function isCollidingWithObstacle(boat, obstacle) {
 
 function handleObstacleCollision(obstacle) {
     gameState.boat.hearts--;
-    if (gameState.boat.fruits > 0) gameState.boat.fruits--;
+    if (gameState.boat.fruits > 0) {
+        // Lose 1-3 fruits randomly
+        const fruitsLost = Math.min(gameState.boat.fruits, Math.floor(Math.random() * 3) + 1);
+        gameState.boat.fruits -= fruitsLost;
+    }
     
     // Reset boat position
     gameState.boat.x = 50;
@@ -134,7 +146,8 @@ function handleObstacleCollision(obstacle) {
 
 function updateStats() {
     document.getElementById('hearts').textContent = 'Hearts: ' + '❤️'.repeat(gameState.boat.hearts);
-    document.getElementById('fruits').textContent = 'Fruits: ' + gameState.boat.fruits;
+    document.getElementById('fruits').textContent = 'Fruits on boat: ' + gameState.boat.fruits;
+    document.getElementById('fruits').textContent += ' | Delivered: ' + gameState.boat.portFruits + '/25';
 }
 
 function resetGame() {
@@ -142,6 +155,7 @@ function resetGame() {
     gameState.boat.y = canvas.height / 2;
     gameState.boat.fruits = 0;
     gameState.boat.hearts = 5;
+    gameState.boat.portFruits = 0;
     updateStats();
 }
 
