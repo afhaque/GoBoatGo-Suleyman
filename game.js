@@ -19,7 +19,11 @@ const gameState = {
         speed: 6,
         fruits: 0,
         hearts: 5,
-        portFruits: 0
+        portFruits: 0,
+        isBlinking: false,
+        blinkStart: 0,
+        isStunned: false,
+        stunnedStart: 0
     },
     port: {
         x: 30,
@@ -65,6 +69,14 @@ document.addEventListener('keyup', (e) => {
 });
 
 function moveBoat() {
+    // Don't move if stunned
+    if (gameState.boat.isStunned) {
+        if (Date.now() - gameState.boat.stunnedStart >= 1000) {
+            gameState.boat.isStunned = false;
+        }
+        return;
+    }
+
     if (keys.ArrowUp) gameState.boat.y -= gameState.boat.speed;
     if (keys.ArrowDown) gameState.boat.y += gameState.boat.speed;
     if (keys.ArrowLeft) gameState.boat.x -= gameState.boat.speed;
@@ -129,6 +141,9 @@ function isCollidingWithObstacle(boat, obstacle) {
 }
 
 function handleObstacleCollision(obstacle) {
+    // Prevent multiple collisions while blinking
+    if (gameState.boat.isBlinking) return;
+
     gameState.boat.hearts--;
     if (gameState.boat.fruits > 0) {
         // Lose 1-3 fruits randomly
@@ -136,9 +151,11 @@ function handleObstacleCollision(obstacle) {
         gameState.boat.fruits -= fruitsLost;
     }
     
-    // Reset boat position
-    gameState.boat.x = 50;
-    gameState.boat.y = canvas.height / 2;
+    // Start blinking and stunning
+    gameState.boat.isBlinking = true;
+    gameState.boat.blinkStart = Date.now();
+    gameState.boat.isStunned = true;
+    gameState.boat.stunnedStart = Date.now();
     
     updateStats();
     
@@ -167,6 +184,11 @@ function draw() {
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // Check if blinking should end
+    if (gameState.boat.isBlinking && Date.now() - gameState.boat.blinkStart >= 1000) {
+        gameState.boat.isBlinking = false;
+    }
+
     // Draw port
     ctx.fillStyle = 'gray';
     ctx.fillRect(gameState.port.x, gameState.port.y, gameState.port.width, gameState.port.height);
@@ -181,9 +203,11 @@ function draw() {
     ctx.font = '16px Arial';
     ctx.fillText('Fruit Island', gameState.fruitIsland.x - 20, gameState.fruitIsland.y - 10);
 
-    // Draw boat
-    ctx.fillStyle = 'white';
-    ctx.fillRect(gameState.boat.x, gameState.boat.y, gameState.boat.width, gameState.boat.height);
+    // Draw boat (blink every 100ms when hit)
+    if (!gameState.boat.isBlinking || Math.floor((Date.now() - gameState.boat.blinkStart) / 100) % 2 === 0) {
+        ctx.fillStyle = gameState.boat.isStunned ? 'red' : 'white';
+        ctx.fillRect(gameState.boat.x, gameState.boat.y, gameState.boat.width, gameState.boat.height);
+    }
 
     // Draw obstacles
     gameState.obstacles.forEach(obstacle => {
