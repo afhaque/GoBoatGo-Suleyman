@@ -450,6 +450,7 @@ const config = {
     type: Phaser.AUTO, // Use WebGL if available, otherwise Canvas
     width: 800,
     height: 600,
+    backgroundColor: '#0055AA', // Set canvas background color
     // parent: 'phaser-game-container', // Optional: Specify a div ID to contain the canvas
     physics: {
         default: 'arcade',
