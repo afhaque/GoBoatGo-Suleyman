@@ -229,8 +229,12 @@ class MainScene extends Phaser.Scene {
     }
 
     handleInput() {
+        // console.log("handleInput called"); // Debug: Check if function runs
+        const isStunned = this.boat.data.get('isStunned');
+        // console.log("Is Stunned:", isStunned); // Debug: Check stun state
+
         // Stop movement if stunned
-        if (this.boat.data.get('isStunned')) {
+        if (isStunned) {
             this.boat.setVelocity(0);
             return;
         }
@@ -249,6 +253,9 @@ class MainScene extends Phaser.Scene {
         } else if (this.cursors.down.isDown) {
             targetVelocityY = this.BOAT_SPEED;
         }
+
+        // console.log(`Cursors: L=${this.cursors.left.isDown}, R=${this.cursors.right.isDown}, U=${this.cursors.up.isDown}, D=${this.cursors.down.isDown}`); // Debug: Check key states
+        // console.log(`Calculated Velocity: X=${targetVelocityX}, Y=${targetVelocityY}`); // Debug: Check calculated velocity
 
         this.boat.setVelocity(targetVelocityX, targetVelocityY);
 
