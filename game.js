@@ -224,8 +224,9 @@ class MainScene extends Phaser.Scene {
     }
 
     update(time, delta) {
-        // console.log(`Update running - Time: ${time.toFixed(0)}`); // Debug: Check if update loop runs
+        console.log(`Update running - Time: ${time.toFixed(0)}`); // Debug: Check if update loop runs
         // Only run updates if physics is running (not paused)
+        console.log(`Physics running: ${this.physics.world.running}`); // Debug: Check physics status
         if (!this.physics.world.running) return;
 
         this.handleInput();
