@@ -130,6 +130,7 @@ class MainScene extends Phaser.Scene {
         // --- Game Objects ---
         // Port (adjust position based on image size and desired location)
         this.port = this.physics.add.staticImage(105, gameHeight / 2, 'port'); // Centered x = 30 + 150/2 = 105
+        this.port.setDisplaySize(150, 150); // Set display size to match original intent
 
         // Fruit Island (adjust position)
         this.fruitIsland = this.physics.add.staticImage(gameWidth - 60, gameHeight / 2, 'island_texture'); // Centered x = (W-90) + 60/2 = W-60
