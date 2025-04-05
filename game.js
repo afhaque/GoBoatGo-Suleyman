@@ -136,12 +136,13 @@ class MainScene extends Phaser.Scene {
 
         // Boat
         this.boat = this.physics.add.sprite(50 + 25, gameHeight / 2, 'boat'); // Use 'boat' image key
-        this.boat.setDisplaySize(100, 100); // Increased display size
+        this.boat.displayWidth = 120; // Slightly larger display width
+        this.boat.scaleY = this.boat.scaleX; // Maintain aspect ratio
         this.boat.setCollideWorldBounds(true);
         this.boat.setBounce(0); // No bouncing off walls
-        // Adjust physics body size/offset if needed for better collision (example)
-        this.boat.body.setSize(80, 80); // Increased physics body size
-        // this.boat.body.setOffset(10, 10); // Example offset if needed, adjust proportionally
+        // Adjust physics body size proportionally
+        this.boat.body.setSize(this.boat.displayWidth * 0.8, this.boat.displayHeight * 0.8); // 80% of display size
+        // this.boat.body.setOffset(this.boat.displayWidth * 0.1, this.boat.displayHeight * 0.1); // Example offset
         this.boat.setDataEnabled();
         this.resetBoatState(); // Initialize hearts, fruits etc.
 
@@ -220,8 +221,10 @@ class MainScene extends Phaser.Scene {
 
             // Set specific properties for sharks
             if (obsData.type === 'shark') {
-                obstacle.setDisplaySize(120, 60); // Increased display size for shark
-                obstacle.body.setSize(100, 50); // Increased physics body for shark
+                obstacle.displayWidth = 120; // Set display width for shark
+                obstacle.scaleY = obstacle.scaleX; // Maintain aspect ratio
+                // Adjust physics body size proportionally
+                obstacle.body.setSize(obstacle.displayWidth * 0.85, obstacle.displayHeight * 0.85); // ~85% of display size
             } else {
                  // Keep original size for other obstacles (rectangles)
                  obstacle.body.setSize(30, 30);
