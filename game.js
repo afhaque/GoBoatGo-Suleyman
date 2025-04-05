@@ -211,29 +211,61 @@ class MainScene extends Phaser.Scene {
             { type: 'tornado', x: 350, y: 450 }
         ];
 
+        const gameWidth = this.sys.game.config.width;
+        const gameHeight = this.sys.game.config.height;
+
         initialObstacles.forEach(obsData => {
             const speed = this.OBSTACLE_SPEED_MAP[obsData.type] || 100;
-            // Ensure obstacle stays within reasonable vertical bounds initially
-            const initialY = Phaser.Math.Clamp(obsData.y, 30, this.sys.game.config.height - 30);
-            // Use the correct texture based on type
-            const textureKey = obsData.type === 'shark' ? 'shark_image' : obsData.type;
-            const obstacle = this.obstacles.create(obsData.x, initialY, textureKey);
+            let obstacle;
 
-            // Set specific properties for sharks
             if (obsData.type === 'shark') {
-                obstacle.displayWidth = 120; // Set display width for shark
+                // --- Shark: Horizontal Movement ---
+                const sharkWidth = 120; // Defined display width
+                // Calculate height based on aspect ratio after texture loads (approximate here or refine if needed)
+                const approxSharkHeight = sharkWidth / 2; // Assuming ~2:1 ratio based on previous sizing
+
+                // Random Y position (ensure fully visible)
+                const randomY = Phaser.Math.Between(approxSharkHeight / 2, gameHeight - approxSharkHeight / 2);
+
+                // Random start side (0 = left, 1 = right)
+                const startSide = Phaser.Math.Between(0, 1);
+                let startX, velocityX;
+
+                if (startSide === 0) { // Start Left
+                    startX = sharkWidth / 2; // Position based on center anchor
+                    velocityX = speed;
+                } else { // Start Right
+                    startX = gameWidth - sharkWidth / 2; // Position based on center anchor
+                    velocityX = -speed;
+                }
+
+                obstacle = this.obstacles.create(startX, randomY, 'shark_image');
+                obstacle.displayWidth = sharkWidth;
                 obstacle.scaleY = obstacle.scaleX; // Maintain aspect ratio
-                // Adjust physics body size proportionally
-                obstacle.body.setSize(obstacle.displayWidth * 0.85, obstacle.displayHeight * 0.85); // ~85% of display size
+                obstacle.body.setSize(obstacle.displayWidth * 0.85, obstacle.displayHeight * 0.85); // Adjust physics body
+
+                obstacle.setVelocityX(velocityX); // Set horizontal velocity
+                obstacle.setVelocityY(0);         // No vertical velocity
+                obstacle.setBounceX(1);           // Bounce horizontally
+                obstacle.setBounceY(0);           // Don't bounce vertically
+
             } else {
-                 // Keep original size for other obstacles (rectangles)
-                 obstacle.body.setSize(30, 30);
+                // --- Other Obstacles: Vertical Movement ---
+                const initialY = Phaser.Math.Clamp(obsData.y, 30, gameHeight - 30);
+                const textureKey = obsData.type; // 'tornado' or 'wave'
+                obstacle = this.obstacles.create(obsData.x, initialY, textureKey);
+
+                obstacle.body.setSize(30, 30); // Keep original size for rectangles
+
+                obstacle.setVelocityY(speed * (Math.random() < 0.5 ? 1 : -1)); // Vertical velocity
+                obstacle.setVelocityX(0); // No horizontal velocity
+                obstacle.setBounceY(1); // Bounce vertically
+                obstacle.setBounceX(0); // Don't bounce horizontally
             }
 
-            obstacle.setVelocityY(speed * (Math.random() < 0.5 ? 1 : -1)); // Random initial direction
+            // Common properties for all obstacles
             obstacle.setCollideWorldBounds(true);
-            obstacle.setBounceY(1); // Bounce off top/bottom
-            obstacle.setImmovable(true); // Boat doesn't push obstacles
+            obstacle.setImmovable(true);
         });
     }
 
