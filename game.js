@@ -225,9 +225,8 @@ class MainScene extends Phaser.Scene {
 
     update(time, delta) {
         console.log(`Update running - Time: ${time.toFixed(0)}`); // Debug: Check if update loop runs
-        // Only run updates if physics is running (not paused)
-        console.log(`Physics running: ${this.physics.world.running}`); // Debug: Check physics status
-        if (!this.physics.world.running) return;
+        // The update loop runs regardless of physics state (paused/running)
+        // We handle paused physics within specific actions if needed (e.g., endGame)
 
         this.handleInput();
         this.handleBlinking(time); // Pass time for blink calculation
