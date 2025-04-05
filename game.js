@@ -141,7 +141,7 @@ class MainScene extends Phaser.Scene {
         this.boat.setCollideWorldBounds(true);
         this.boat.setBounce(0); // No bouncing off walls
         // Adjust physics body size proportionally
-        this.boat.body.setSize(this.boat.displayWidth * 0.8, this.boat.displayHeight * 0.8); // 80% of display size
+        this.boat.body.setSize(this.boat.displayWidth * 1, this.boat.displayHeight * 0.8); // 80% of display size
         // this.boat.body.setOffset(this.boat.displayWidth * 0.1, this.boat.displayHeight * 0.1); // Example offset
         this.boat.setDataEnabled();
         this.resetBoatState(); // Initialize hearts, fruits etc.
