@@ -33,17 +33,15 @@ class MainScene extends Phaser.Scene {
     preload() {
         this.load.image('port', 'assets/Port.png');
         this.load.audio('game_music', 'assets/game_music.mp3');
+        this.load.image('boat', 'assets/boat.png'); // Load boat image
+        this.load.image('shark_image', 'assets/shark.png'); // Load shark image
 
         // Generate simple textures for missing assets
         this.generateTextures();
     }
 
     generateTextures() {
-        // Boat Texture (White Rectangle)
-        let boatGraphics = this.make.graphics({ fillStyle: { color: 0xffffff } });
-        boatGraphics.fillRect(0, 0, 50, 30);
-        boatGraphics.generateTexture('boat_texture', 50, 30);
-        boatGraphics.destroy();
+        // Boat texture is now loaded from image
 
         // Fruit Island Texture (Green Rectangle)
         let islandGraphics = this.make.graphics({ fillStyle: { color: 0x00ff00 } });
@@ -52,10 +50,7 @@ class MainScene extends Phaser.Scene {
         islandGraphics.destroy();
 
         // Obstacle Textures (Colored Rectangles)
-        let sharkGraphics = this.make.graphics({ fillStyle: { color: 0x808080 } }); // Grey
-        sharkGraphics.fillRect(0, 0, 30, 30);
-        sharkGraphics.generateTexture('shark', 30, 30);
-        sharkGraphics.destroy();
+        // Shark texture is now loaded from image
 
         let tornadoGraphics = this.make.graphics({ fillStyle: { color: 0xA9A9A9 } }); // Dark Grey
         tornadoGraphics.fillRect(0, 0, 30, 30);
@@ -140,9 +135,13 @@ class MainScene extends Phaser.Scene {
 
 
         // Boat
-        this.boat = this.physics.add.sprite(50 + 25, gameHeight / 2, 'boat_texture'); // Start near port, adjust x for center
+        this.boat = this.physics.add.sprite(50 + 25, gameHeight / 2, 'boat'); // Use 'boat' image key
+        this.boat.setDisplaySize(50, 50); // Adjust display size as needed
         this.boat.setCollideWorldBounds(true);
         this.boat.setBounce(0); // No bouncing off walls
+        // Adjust physics body size/offset if needed for better collision (example)
+        this.boat.body.setSize(40, 40); // Make body slightly smaller than display size
+        // this.boat.body.setOffset(5, 5); // Example offset if needed
         this.boat.setDataEnabled();
         this.resetBoatState(); // Initialize hearts, fruits etc.
 
@@ -215,7 +214,19 @@ class MainScene extends Phaser.Scene {
             const speed = this.OBSTACLE_SPEED_MAP[obsData.type] || 100;
             // Ensure obstacle stays within reasonable vertical bounds initially
             const initialY = Phaser.Math.Clamp(obsData.y, 30, this.sys.game.config.height - 30);
-            const obstacle = this.obstacles.create(obsData.x, initialY, obsData.type);
+            // Use the correct texture based on type
+            const textureKey = obsData.type === 'shark' ? 'shark_image' : obsData.type;
+            const obstacle = this.obstacles.create(obsData.x, initialY, textureKey);
+
+            // Set specific properties for sharks
+            if (obsData.type === 'shark') {
+                obstacle.setDisplaySize(60, 30); // Adjust display size for shark
+                obstacle.body.setSize(50, 25); // Adjust physics body for shark
+            } else {
+                 // Keep original size for other obstacles (rectangles)
+                 obstacle.body.setSize(30, 30);
+            }
+
             obstacle.setVelocityY(speed * (Math.random() < 0.5 ? 1 : -1)); // Random initial direction
             obstacle.setCollideWorldBounds(true);
             obstacle.setBounceY(1); // Bounce off top/bottom
