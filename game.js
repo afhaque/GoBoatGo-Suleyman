@@ -70,15 +70,8 @@ class MainScene extends Phaser.Scene {
         repairGraphics.fillStyle(0xffc0cb); // Pink
         repairGraphics.fillRect(0, 0, 40, 40);
         repairGraphics.fillStyle(0xff0000); // Red
-        // Draw a simple heart shape
-        repairGraphics.beginPath();
-        repairGraphics.moveTo(20, 12);
-        repairGraphics.bezierCurveTo(20, 8, 15, 8, 15, 12);
-        repairGraphics.bezierCurveTo(15, 18, 20, 22, 20, 25);
-        repairGraphics.bezierCurveTo(20, 22, 25, 18, 25, 12);
-        repairGraphics.bezierCurveTo(25, 8, 20, 8, 20, 12);
-        repairGraphics.closePath();
-        repairGraphics.fillPath();
+        // Draw a simple red circle as a placeholder for the heart
+        repairGraphics.fillCircle(20, 20, 10); // Center x, y, radius
         repairGraphics.generateTexture('repair_boat_texture', 40, 40);
         repairGraphics.destroy();
     }
