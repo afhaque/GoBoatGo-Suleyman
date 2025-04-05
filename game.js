@@ -550,8 +550,8 @@ class MainScene extends Phaser.Scene {
 // --- Phaser Game Configuration ---
 const config = {
     type: Phaser.AUTO, // Use WebGL if available, otherwise Canvas
-    width: 800,
-    height: 600,
+    width: 1200, // Increased width
+    height: 900, // Increased height
     backgroundColor: '#0055AA', // Set canvas background color
     // parent: 'phaser-game-container', // Optional: Specify a div ID to contain the canvas
     physics: {
