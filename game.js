@@ -1,3 +1,5 @@
+console.log("game.js script loaded"); // Debug: Check if script file executes
+
 class MainScene extends Phaser.Scene {
     constructor() {
         super({ key: 'MainScene' });
@@ -152,6 +154,7 @@ class MainScene extends Phaser.Scene {
         this.repairBoatGroup = this.physics.add.group();
 
         // --- Input ---
+        console.log("create(): Initializing keyboard cursors..."); // Debug: Check if create reaches this point
         this.cursors = this.input.keyboard.createCursorKeys();
 
         // --- UI ---
