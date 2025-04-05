@@ -190,8 +190,9 @@ class MainScene extends Phaser.Scene {
     }
 
     spawnShark() {
+        console.log("spawnShark called"); // Debug: Check if function is called by timer
         // Don't spawn if game is paused
-        if (!this.physics.world.running) return;
+        // if (!this.physics.world.running) return; // Temporarily remove this check
 
         const gameWidth = this.sys.game.config.width;
         const gameHeight = this.sys.game.config.height;
@@ -213,10 +214,13 @@ class MainScene extends Phaser.Scene {
             startX = gameWidth + sharkWidth / 2; // Start off-screen right
             velocityX = -speed;
         }
+        console.log(`Spawning shark at X: ${startX.toFixed(0)}, Y: ${randomY.toFixed(0)}, VelX: ${velocityX}`); // Debug: Log position/velocity
 
         const shark = this.obstacles.create(startX, randomY, 'shark_image');
+        console.log("Shark object created:", shark ? "Yes" : "No", shark); // Debug: Check if object exists and log it
         if (!shark) return; // Could happen if group was destroyed?
 
+        shark.setAlpha(1); // Ensure alpha starts at 1
         shark.displayWidth = sharkWidth;
         shark.scaleY = shark.scaleX;
         shark.body.setSize(shark.displayWidth * 0.85, shark.displayHeight * 0.85);
@@ -228,7 +232,8 @@ class MainScene extends Phaser.Scene {
         shark.setCollideWorldBounds(true); // Keep this to make it bounce
         shark.setImmovable(true);
 
-        // Fade out tween
+        // Fade out tween - Temporarily disabled for debugging
+        /*
         this.tweens.add({
             targets: shark,
             alpha: 0,
@@ -241,6 +246,7 @@ class MainScene extends Phaser.Scene {
                 }
             }
         });
+        */
 
         // Reset timer delay for next spawn
         this.sharkSpawnTimer.delay = Phaser.Math.Between(2000, 5000);
