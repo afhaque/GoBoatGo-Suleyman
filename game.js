@@ -136,12 +136,12 @@ class MainScene extends Phaser.Scene {
 
         // Boat
         this.boat = this.physics.add.sprite(50 + 25, gameHeight / 2, 'boat'); // Use 'boat' image key
-        this.boat.displayWidth = 120; // Slightly larger display width
+        this.boat.displayWidth = 140; // Increased display width
         this.boat.scaleY = this.boat.scaleX; // Maintain aspect ratio
         this.boat.setCollideWorldBounds(true);
         this.boat.setBounce(0); // No bouncing off walls
         // Adjust physics body size proportionally
-        this.boat.body.setSize(this.boat.displayWidth * 1, this.boat.displayHeight * 0.8); // 80% of display size
+        this.boat.body.setSize(this.boat.displayWidth * 0.8, this.boat.displayHeight * 0.8); // 80% of display size
         // this.boat.body.setOffset(this.boat.displayWidth * 0.1, this.boat.displayHeight * 0.1); // Example offset
         this.boat.setDataEnabled();
         this.resetBoatState(); // Initialize hearts, fruits etc.
