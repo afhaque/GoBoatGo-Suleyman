@@ -1,318 +1,479 @@
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+class MainScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'MainScene' });
+        this.boat = null;
+        this.port = null;
+        this.fruitIsland = null;
+        this.obstacles = null;
+        this.repairBoatGroup = null;
+        this.cursors = null;
+        this.heartsText = null;
+        this.fruitsText = null;
+        this.backgroundMusic = null;
+        this.repairBoatTimer = null; // Keep track of the timer
 
-// Set canvas size
-canvas.width = 800;
-canvas.height = 600;
-
-// Create background music
-const backgroundMusic = new Audio('assets/game_music.mp3');
-backgroundMusic.loop = true;
-
-// Load images
-const portImage = new Image();
-portImage.src = 'assets/Port.png';
-
-// Game state
-const gameState = {
-    repairBoat: {
-        x: 0,
-        y: 0,
-        width: 40,
-        height: 40,
-        active: false,
-        lastSpawnTime: 0,
-        spawnInterval: 15000, // Spawn every 15 seconds
-        duration: 5000 // Stay for 5 seconds
-    },
-    boat: {
-        x: 50,
-        y: canvas.height / 2,
-        width: 50,
-        height: 30,
-        speed: 3,
-        fruits: 0,
-        hearts: 5,
-        portFruits: 0,
-        isBlinking: false,
-        blinkStart: 0,
-        isStunned: false,
-        stunnedStart: 0
-    },
-    port: {
-        x: 30,
-        y: canvas.height / 2 - 80,
-        width: 150,
-        height: 150
-    },
-    fruitIsland: {
-        x: canvas.width - 90,
-        y: canvas.height / 2 - 50,
-        width: 60,
-        height: 100
-    },
-    obstacles: [
-        { type: 'shark', x: 300, y: 300, speed: 2 },
-        { type: 'tornado', x: 500, y: 200, speed: 4 },
-        { type: 'wave', x: 400, y: 400, speed: 1.5 },
-        { type: 'shark', x: 200, y: 150, speed: 3 },
-        { type: 'wave', x: 600, y: 250, speed: 1 },
-        { type: 'tornado', x: 350, y: 450, speed: 5 }
-    ]
-};
-
-// Keyboard state
-const keys = {
-    ArrowUp: false,
-    ArrowDown: false,
-    ArrowLeft: false,
-    ArrowRight: false
-};
-
-// Event listeners
-document.addEventListener('keydown', (e) => {
-    if (keys.hasOwnProperty(e.key)) {
-        keys[e.key] = true;
+        // Game constants
+        this.BOAT_SPEED = 180; // pixels per second
+        this.MAX_HEARTS = 5;
+        this.FRUITS_PER_TRIP = 3;
+        this.FRUITS_TO_WIN = 25;
+        this.OBSTACLE_SPEED_MAP = {
+            'shark': 120,
+            'tornado': 240,
+            'wave': 90
+        };
+        this.REPAIR_BOAT_SPAWN_INTERVAL = 15000; // ms
+        this.REPAIR_BOAT_DURATION = 5000; // ms
+        this.BLINK_DURATION = 1000; // ms
+        this.STUN_DURATION = 1000; // ms
     }
-});
 
-document.addEventListener('keyup', (e) => {
-    if (keys.hasOwnProperty(e.key)) {
-        keys[e.key] = false;
+    preload() {
+        this.load.image('port', 'assets/Port.png');
+        this.load.audio('game_music', 'assets/game_music.mp3');
+
+        // Generate simple textures for missing assets
+        this.generateTextures();
     }
-});
 
-function moveBoat() {
-    // Don't move if stunned
-    if (gameState.boat.isStunned) {
-        if (Date.now() - gameState.boat.stunnedStart >= 1000) {
-            gameState.boat.isStunned = false;
+    generateTextures() {
+        // Boat Texture (White Rectangle)
+        let boatGraphics = this.make.graphics({ fillStyle: { color: 0xffffff } });
+        boatGraphics.fillRect(0, 0, 50, 30);
+        boatGraphics.generateTexture('boat_texture', 50, 30);
+        boatGraphics.destroy();
+
+        // Fruit Island Texture (Green Rectangle)
+        let islandGraphics = this.make.graphics({ fillStyle: { color: 0x00ff00 } });
+        islandGraphics.fillRect(0, 0, 60, 100);
+        islandGraphics.generateTexture('island_texture', 60, 100);
+        islandGraphics.destroy();
+
+        // Obstacle Textures (Colored Rectangles)
+        let sharkGraphics = this.make.graphics({ fillStyle: { color: 0x808080 } }); // Grey
+        sharkGraphics.fillRect(0, 0, 30, 30);
+        sharkGraphics.generateTexture('shark', 30, 30);
+        sharkGraphics.destroy();
+
+        let tornadoGraphics = this.make.graphics({ fillStyle: { color: 0xA9A9A9 } }); // Dark Grey
+        tornadoGraphics.fillRect(0, 0, 30, 30);
+        tornadoGraphics.generateTexture('tornado', 30, 30);
+        tornadoGraphics.destroy();
+
+        let waveGraphics = this.make.graphics({ fillStyle: { color: 0x0000ff } }); // Blue
+        waveGraphics.fillRect(0, 0, 30, 30);
+        waveGraphics.generateTexture('wave', 30, 30);
+        waveGraphics.destroy();
+
+        // Repair Boat Texture (Pink Rectangle with Red Heart)
+        let repairGraphics = this.make.graphics();
+        repairGraphics.fillStyle(0xffc0cb); // Pink
+        repairGraphics.fillRect(0, 0, 40, 40);
+        repairGraphics.fillStyle(0xff0000); // Red
+        // Draw a simple heart shape
+        repairGraphics.beginPath();
+        repairGraphics.moveTo(20, 12);
+        repairGraphics.bezierCurveTo(20, 8, 15, 8, 15, 12);
+        repairGraphics.bezierCurveTo(15, 18, 20, 22, 20, 25);
+        repairGraphics.bezierCurveTo(20, 22, 25, 18, 25, 12);
+        repairGraphics.bezierCurveTo(25, 8, 20, 8, 20, 12);
+        repairGraphics.closePath();
+        repairGraphics.fillPath();
+        repairGraphics.generateTexture('repair_boat_texture', 40, 40);
+        repairGraphics.destroy();
+    }
+
+    create() {
+        // --- Setup ---
+        const gameWidth = this.sys.game.config.width;
+        const gameHeight = this.sys.game.config.height;
+
+        // Enable physics
+        this.physics.world.setBounds(0, 0, gameWidth, gameHeight);
+
+        // --- Music ---
+        // Add music only if not already loaded/playing from a previous scene instance
+        if (!this.sound.get('game_music')) {
+            this.backgroundMusic = this.sound.add('game_music', { loop: true, volume: 0.5 });
+        } else {
+            this.backgroundMusic = this.sound.get('game_music');
+            // Ensure it's playing if returning to the scene after pause/stop
+            if (!this.backgroundMusic.isPlaying) {
+                 this.backgroundMusic.play(); // Or resume() if pause is preferred
+            }
         }
-        return;
-    }
 
-    if (keys.ArrowUp) gameState.boat.y -= gameState.boat.speed;
-    if (keys.ArrowDown) gameState.boat.y += gameState.boat.speed;
-    if (keys.ArrowLeft) gameState.boat.x -= gameState.boat.speed;
-    if (keys.ArrowRight) gameState.boat.x += gameState.boat.speed;
-
-    // Keep boat in bounds
-    gameState.boat.x = Math.max(0, Math.min(canvas.width - gameState.boat.width, gameState.boat.x));
-    gameState.boat.y = Math.max(0, Math.min(canvas.height - gameState.boat.height, gameState.boat.y));
-}
-
-function moveObstacles() {
-    gameState.obstacles.forEach(obstacle => {
-        obstacle.y += obstacle.speed;
-        if (obstacle.y > canvas.height - 30 || obstacle.y < 0) {
-            obstacle.speed *= -1;
-        }
-    });
-}
-
-function checkCollisions() {
-    // Check repair boat collision
-    if (gameState.repairBoat.active && isColliding(gameState.boat, gameState.repairBoat)) {
-        handleRepairBoatCollision();
-    }
-
-    // Check fruit island collision
-    if (isColliding(gameState.boat, gameState.fruitIsland) && gameState.boat.fruits < 3) {
-        gameState.boat.fruits = 3;
-        updateStats();
-    }
-
-    // Check port collision
-    if (isColliding(gameState.boat, gameState.port) && gameState.boat.fruits > 0) {
-        // Add fruits to port count
-        gameState.boat.portFruits += gameState.boat.fruits;
-        gameState.boat.fruits = 0;
-        updateStats();
-        
-        // Check win condition
-        if (gameState.boat.portFruits >= 25) {
-            alert('You won! You delivered 25 fruits safely!');
-            resetGame();
-        }
-    }
-
-    // Check obstacle collisions
-    gameState.obstacles.forEach(obstacle => {
-        if (isCollidingWithObstacle(gameState.boat, obstacle)) {
-            handleObstacleCollision(obstacle);
-        }
-    });
-}
-
-function isColliding(rect1, rect2) {
-    return rect1.x < rect2.x + rect2.width &&
-           rect1.x + rect1.width > rect2.x &&
-           rect1.y < rect2.y + rect2.height &&
-           rect1.y + rect1.height > rect2.y;
-}
-
-function isCollidingWithObstacle(boat, obstacle) {
-    const obstacleSize = 30;
-    return boat.x < obstacle.x + obstacleSize &&
-           boat.x + boat.width > obstacle.x &&
-           boat.y < obstacle.y + obstacleSize &&
-           boat.y + boat.height > obstacle.y;
-}
-
-function handleObstacleCollision(obstacle) {
-    // Prevent multiple collisions while blinking
-    if (gameState.boat.isBlinking) return;
-
-    gameState.boat.hearts--;
-    if (gameState.boat.fruits > 0) {
-        // Lose 1-3 fruits randomly
-        const fruitsLost = Math.min(gameState.boat.fruits, Math.floor(Math.random() * 3) + 1);
-        gameState.boat.fruits -= fruitsLost;
-    }
-    
-    // Start blinking and stunning
-    gameState.boat.isBlinking = true;
-    gameState.boat.blinkStart = Date.now();
-    gameState.boat.isStunned = true;
-    gameState.boat.stunnedStart = Date.now();
-    
-    updateStats();
-    
-    if (gameState.boat.hearts <= 0) {
-        alert('Game Over! You lost all your hearts!');
-        resetGame();
-    }
-}
-
-function updateStats() {
-    document.getElementById('hearts').textContent = 'Hearts: ' + '❤️'.repeat(gameState.boat.hearts);
-    document.getElementById('fruits').textContent = 'Fruits on boat: ' + gameState.boat.fruits;
-    document.getElementById('fruits').textContent += ' | Delivered: ' + gameState.boat.portFruits + '/25';
-}
-
-function resetGame() {
-    gameState.boat.x = 50;
-    gameState.boat.y = canvas.height / 2;
-    gameState.boat.fruits = 0;
-    gameState.boat.hearts = 5;
-    gameState.boat.portFruits = 0;
-    updateStats();
-}
-
-function draw() {
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Check if blinking should end
-    if (gameState.boat.isBlinking && Date.now() - gameState.boat.blinkStart >= 1000) {
-        gameState.boat.isBlinking = false;
-    }
-
-    // Draw port
-    ctx.drawImage(portImage, gameState.port.x, gameState.port.y, gameState.port.width, gameState.port.height);
-
-    // Draw fruit island
-    ctx.fillStyle = 'green';
-    ctx.fillRect(gameState.fruitIsland.x, gameState.fruitIsland.y, gameState.fruitIsland.width, gameState.fruitIsland.height);
-    ctx.fillStyle = 'white';
-    ctx.font = '16px Arial';
-    ctx.fillText('Fruit Island', gameState.fruitIsland.x - 20, gameState.fruitIsland.y - 10);
-
-    // Draw boat (blink every 100ms when hit)
-    if (!gameState.boat.isBlinking || Math.floor((Date.now() - gameState.boat.blinkStart) / 100) % 2 === 0) {
-        ctx.fillStyle = gameState.boat.isStunned ? 'red' : 'white';
-        ctx.fillRect(gameState.boat.x, gameState.boat.y, gameState.boat.width, gameState.boat.height);
-    }
-
-    // Draw repair boat if active
-    if (gameState.repairBoat.active) {
-        ctx.fillStyle = 'pink';
-        ctx.fillRect(gameState.repairBoat.x, gameState.repairBoat.y, 
-                    gameState.repairBoat.width, gameState.repairBoat.height);
-        
-        // Draw heart symbol on repair boat
-        ctx.fillStyle = 'red';
-        ctx.font = '20px Arial';
-        ctx.fillText('❤️', gameState.repairBoat.x + 10, gameState.repairBoat.y + 25);
-    }
-
-    // Draw obstacles
-    gameState.obstacles.forEach(obstacle => {
-        switch(obstacle.type) {
-            case 'shark':
-                ctx.fillStyle = 'grey';
-                break;
-            case 'tornado':
-                ctx.fillStyle = 'darkgrey';
-                break;
-            case 'wave':
-                ctx.fillStyle = 'blue';
-                break;
-        }
-        ctx.fillRect(obstacle.x, obstacle.y, 30, 30);
-    });
-}
-
-function updateRepairBoat() {
-    const currentTime = Date.now();
-    
-    // If repair boat is active, check if it should despawn
-    if (gameState.repairBoat.active) {
-        if (currentTime - gameState.repairBoat.lastSpawnTime >= gameState.repairBoat.duration) {
-            gameState.repairBoat.active = false;
-        }
-    } 
-    // If repair boat is not active, check if it should spawn
-    else if (currentTime - gameState.repairBoat.lastSpawnTime >= gameState.repairBoat.spawnInterval) {
-        spawnRepairBoat();
-    }
-}
-
-function spawnRepairBoat() {
-    gameState.repairBoat.x = Math.random() * (canvas.width - gameState.repairBoat.width);
-    gameState.repairBoat.y = Math.random() * (canvas.height - gameState.repairBoat.height);
-    gameState.repairBoat.active = true;
-    gameState.repairBoat.lastSpawnTime = Date.now();
-}
-
-function handleRepairBoatCollision() {
-    if (gameState.boat.hearts < 5) {
-        gameState.boat.hearts++;
-        updateStats();
-    }
-    gameState.repairBoat.active = false;
-}
-
-function gameLoop() {
-    moveBoat();
-    moveObstacles();
-    updateRepairBoat();
-    checkCollisions();
-    draw();
-    requestAnimationFrame(gameLoop);
-}
-
-// Wait for port image to load before starting the game
-portImage.onload = () => {
-    updateStats(); // Initialize the visual display of hearts
-    // Start background music with user interaction
-    document.addEventListener('click', () => {
-        if (backgroundMusic.paused) {
-            backgroundMusic.play().catch(error => {
-                console.log("Audio playback failed:", error);
+        // Play music on first pointer down interaction (safer across restarts)
+        if (!this.sound.locked) { // Check if audio context is already unlocked
+             if (!this.backgroundMusic.isPlaying) {
+                 this.backgroundMusic.play();
+             }
+        } else {
+            // If locked, wait for unlock (usually happens on first user interaction)
+            this.sound.once(Phaser.Sound.Events.UNLOCKED, () => {
+                 if (!this.backgroundMusic.isPlaying) {
+                    this.backgroundMusic.play();
+                 }
             });
         }
-    }, { once: true });
-    gameLoop();
-};
 
-// Add music controls
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'm') {
-        if (backgroundMusic.paused) {
-            backgroundMusic.play();
-        } else {
-            backgroundMusic.pause();
+        // Music toggle key (ensure listener isn't added multiple times on restart)
+        this.input.keyboard.off('keydown-M'); // Remove previous listener if exists
+        this.input.keyboard.on('keydown-M', () => {
+            if (this.backgroundMusic.isPlaying) {
+                this.backgroundMusic.pause();
+            } else {
+                // Use resume if paused, play if stopped/never started
+                 if (this.backgroundMusic.isPaused) {
+                    this.backgroundMusic.resume();
+                 } else {
+                    // This handles the case where it was stopped or never played
+                    this.backgroundMusic.play();
+                 }
+            }
+        });
+
+
+        // --- Game Objects ---
+        // Port (adjust position based on image size and desired location)
+        this.port = this.physics.add.staticImage(105, gameHeight / 2, 'port'); // Centered x = 30 + 150/2 = 105
+
+        // Fruit Island (adjust position)
+        this.fruitIsland = this.physics.add.staticImage(gameWidth - 60, gameHeight / 2, 'island_texture'); // Centered x = (W-90) + 60/2 = W-60
+        this.add.text(this.fruitIsland.x, this.fruitIsland.y - this.fruitIsland.height/2 - 15, 'Fruit Island', { fontSize: '16px', fill: '#fff', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5);
+
+
+        // Boat
+        this.boat = this.physics.add.sprite(50 + 25, gameHeight / 2, 'boat_texture'); // Start near port, adjust x for center
+        this.boat.setCollideWorldBounds(true);
+        this.boat.setBounce(0); // No bouncing off walls
+        this.boat.setDataEnabled();
+        this.resetBoatState(); // Initialize hearts, fruits etc.
+
+        // Obstacles Group
+        this.obstacles = this.physics.add.group();
+        this.createObstacles();
+
+        // Repair Boat Group (will be populated by timer)
+        this.repairBoatGroup = this.physics.add.group();
+
+        // --- Input ---
+        this.cursors = this.input.keyboard.createCursorKeys();
+
+        // --- UI ---
+        const textStyle = { fontSize: '20px', fill: '#fff', stroke: '#000', strokeThickness: 4 };
+        this.heartsText = this.add.text(10, 10, '', textStyle);
+        this.fruitsText = this.add.text(10, 40, '', textStyle);
+        this.updateStatsUI();
+
+        // --- Collisions ---
+        this.physics.add.overlap(this.boat, this.fruitIsland, this.collectFruit, null, this);
+        this.physics.add.overlap(this.boat, this.port, this.deliverFruit, null, this);
+        this.physics.add.collider(this.boat, this.obstacles, this.hitObstacle, null, this);
+        this.physics.add.overlap(this.boat, this.repairBoatGroup, this.hitRepairBoat, null, this);
+
+        // --- Timers ---
+        // Ensure timer isn't added multiple times on restart
+        if (this.repairBoatTimer) this.repairBoatTimer.remove();
+        this.repairBoatTimer = this.time.addEvent({
+            delay: this.REPAIR_BOAT_SPAWN_INTERVAL,
+            callback: this.spawnRepairBoat,
+            callbackScope: this,
+            loop: true
+        });
+    }
+
+    resetBoatState() {
+        this.boat.data.set('hearts', this.MAX_HEARTS);
+        this.boat.data.set('fruits', 0);
+        this.boat.data.set('portFruits', 0);
+        this.boat.data.set('isBlinking', false);
+        this.boat.data.set('isStunned', false);
+        // Clear any existing timers associated with the boat's data
+        if (this.boat.data.get('blinkTimer')) this.boat.data.get('blinkTimer').remove();
+        if (this.boat.data.get('stunTimer')) this.boat.data.get('stunTimer').remove();
+        this.boat.data.set('blinkTimer', null);
+        this.boat.data.set('stunTimer', null);
+        this.boat.clearTint();
+        this.boat.setVisible(true);
+        // Reset position
+        this.boat.setPosition(50 + 25, this.sys.game.config.height / 2);
+        this.boat.setVelocity(0,0); // Stop any movement
+    }
+
+    createObstacles() {
+        // Clear existing obstacles if restarting scene
+        this.obstacles.clear(true, true);
+
+        const initialObstacles = [
+            { type: 'shark', x: 300, y: 300 },
+            { type: 'tornado', x: 500, y: 200 },
+            { type: 'wave', x: 400, y: 400 },
+            { type: 'shark', x: 200, y: 150 },
+            { type: 'wave', x: 600, y: 250 },
+            { type: 'tornado', x: 350, y: 450 }
+        ];
+
+        initialObstacles.forEach(obsData => {
+            const speed = this.OBSTACLE_SPEED_MAP[obsData.type] || 100;
+            // Ensure obstacle stays within reasonable vertical bounds initially
+            const initialY = Phaser.Math.Clamp(obsData.y, 30, this.sys.game.config.height - 30);
+            const obstacle = this.obstacles.create(obsData.x, initialY, obsData.type);
+            obstacle.setVelocityY(speed * (Math.random() < 0.5 ? 1 : -1)); // Random initial direction
+            obstacle.setCollideWorldBounds(true);
+            obstacle.setBounceY(1); // Bounce off top/bottom
+            obstacle.setImmovable(true); // Boat doesn't push obstacles
+        });
+    }
+
+    update(time, delta) {
+        // Only run updates if physics is running (not paused)
+        if (!this.physics.world.running) return;
+
+        this.handleInput();
+        this.handleBlinking(time); // Pass time for blink calculation
+    }
+
+    handleInput() {
+        // Stop movement if stunned
+        if (this.boat.data.get('isStunned')) {
+            this.boat.setVelocity(0);
+            return;
+        }
+
+        let targetVelocityX = 0;
+        let targetVelocityY = 0;
+
+        if (this.cursors.left.isDown) {
+            targetVelocityX = -this.BOAT_SPEED;
+        } else if (this.cursors.right.isDown) {
+            targetVelocityX = this.BOAT_SPEED;
+        }
+
+        if (this.cursors.up.isDown) {
+            targetVelocityY = -this.BOAT_SPEED;
+        } else if (this.cursors.down.isDown) {
+            targetVelocityY = this.BOAT_SPEED;
+        }
+
+        this.boat.setVelocity(targetVelocityX, targetVelocityY);
+
+        // Normalize diagonal speed
+        if (targetVelocityX !== 0 && targetVelocityY !== 0) {
+            this.boat.body.velocity.normalize().scale(this.BOAT_SPEED);
         }
     }
-});
+
+     handleBlinking(time) { // Use the time parameter from update
+        if (this.boat.data.get('isBlinking')) {
+            // Simple blink effect: toggle visibility every 100ms
+            const blinkRate = 100;
+            // Use the blinkStartTime stored in data
+            const blinkStartTime = this.boat.data.get('blinkStartTime') || 0;
+            this.boat.setVisible(Math.floor((time - blinkStartTime) / blinkRate) % 2 === 0);
+        } else {
+            // Ensure boat is visible when not blinking
+            if (!this.boat.visible) {
+                this.boat.setVisible(true);
+            }
+        }
+    }
+
+    collectFruit(boat, island) {
+        if (boat.data.get('fruits') < this.FRUITS_PER_TRIP) {
+            boat.data.set('fruits', this.FRUITS_PER_TRIP);
+            this.updateStatsUI();
+            // Optional: Add a sound effect
+            // this.sound.play('collect_sound');
+        }
+    }
+
+    deliverFruit(boat, port) {
+        const currentFruits = boat.data.get('fruits');
+        if (currentFruits > 0) {
+            const currentPortFruits = boat.data.get('portFruits');
+            const newPortFruits = currentPortFruits + currentFruits;
+            boat.data.set('portFruits', newPortFruits);
+            boat.data.set('fruits', 0);
+            this.updateStatsUI();
+            // Optional: Add a sound effect
+            // this.sound.play('deliver_sound');
+
+            // Check win condition
+            if (newPortFruits >= this.FRUITS_TO_WIN) {
+                this.winGame();
+            }
+        }
+    }
+
+    hitObstacle(boat, obstacle) {
+        if (boat.data.get('isBlinking')) {
+            return; // Invincible while blinking
+        }
+
+        // --- State Updates ---
+        let currentHearts = boat.data.get('hearts');
+        currentHearts--;
+        boat.data.set('hearts', currentHearts);
+
+        let currentFruits = boat.data.get('fruits');
+        if (currentFruits > 0) {
+            const fruitsLost = Math.min(currentFruits, Phaser.Math.Between(1, 3));
+            boat.data.set('fruits', currentFruits - fruitsLost);
+        }
+
+        boat.data.set('isBlinking', true);
+        boat.data.set('isStunned', true);
+        boat.data.set('blinkStartTime', this.time.now); // Store start time for blinking calculation
+        boat.setTint(0xff0000); // Tint red while stunned/hit
+
+        // --- Timers for Effects ---
+        // Clear existing timers if any (prevents issues with rapid hits)
+        if (boat.data.get('blinkTimer')) boat.data.get('blinkTimer').remove();
+        if (boat.data.get('stunTimer')) boat.data.get('stunTimer').remove();
+
+        // Stop blinking after duration
+        const blinkTimer = this.time.delayedCall(this.BLINK_DURATION, () => {
+            boat.data.set('isBlinking', false);
+            boat.setVisible(true); // Ensure visible at the end
+            // Only remove tint if stun is also over
+            if (!boat.data.get('isStunned')) {
+                 boat.clearTint();
+            }
+            boat.data.set('blinkTimer', null);
+        }, [], this);
+        boat.data.set('blinkTimer', blinkTimer);
+
+
+        // Stop stun after duration
+         const stunTimer = this.time.delayedCall(this.STUN_DURATION, () => {
+            boat.data.set('isStunned', false);
+             // Only remove tint if blinking is also over
+            if (!boat.data.get('isBlinking')) {
+                 boat.clearTint();
+            }
+            boat.data.set('stunTimer', null);
+        }, [], this);
+        boat.data.set('stunTimer', stunTimer);
+
+
+        // --- UI & Game Over Check ---
+        this.updateStatsUI();
+        // Optional: Add a sound effect
+        // this.sound.play('hit_sound');
+
+        if (currentHearts <= 0) {
+            this.gameOver();
+        }
+    }
+
+    spawnRepairBoat() {
+        // Don't spawn if game is paused (e.g., game over screen)
+        if (!this.physics.world.running) return;
+
+        const gameWidth = this.sys.game.config.width;
+        const gameHeight = this.sys.game.config.height;
+
+        const x = Phaser.Math.Between(50, gameWidth - 50); // Avoid edges
+        const y = Phaser.Math.Between(50, gameHeight - 50);
+
+        const repairBoat = this.repairBoatGroup.create(x, y, 'repair_boat_texture');
+        repairBoat.setImmovable(true); // So overlap works correctly
+
+        // Despawn after duration
+        this.time.delayedCall(this.REPAIR_BOAT_DURATION, () => {
+            // Check if the boat still exists and is active before trying to destroy
+             if (repairBoat && repairBoat.active) {
+                repairBoat.destroy();
+            }
+        }, [], this);
+    }
+
+    hitRepairBoat(boat, repairBoat) {
+        let currentHearts = boat.data.get('hearts');
+        if (currentHearts < this.MAX_HEARTS) {
+            boat.data.set('hearts', currentHearts + 1);
+            this.updateStatsUI();
+            // Optional: Add a sound effect
+            // this.sound.play('heal_sound');
+        }
+        repairBoat.destroy(); // Remove the repair boat once collected
+    }
+
+    updateStatsUI() {
+        const hearts = this.boat.data.get('hearts');
+        const fruits = this.boat.data.get('fruits');
+        const portFruits = this.boat.data.get('portFruits');
+
+        this.heartsText.setText('Hearts: ' + '❤️'.repeat(Math.max(0, hearts))); // Ensure hearts don't go below 0 visually
+        this.fruitsText.setText(`Fruits: ${fruits} | Delivered: ${portFruits}/${this.FRUITS_TO_WIN}`);
+    }
+
+    // --- Game Over / Win ---
+    endGame(message, color) {
+        this.physics.pause(); // Pause physics simulation
+        if (this.backgroundMusic && this.backgroundMusic.isPlaying) {
+            this.backgroundMusic.pause(); // Pause instead of stop for potential restart
+        }
+        this.boat.setVelocity(0,0); // Stop boat movement visually
+        this.boat.setTint(0xff0000); // Red tint on game over/win for consistency
+
+        // Clear timers and remove active game objects that shouldn't persist
+        if (this.repairBoatTimer) this.repairBoatTimer.remove();
+        if (this.boat.data.get('blinkTimer')) this.boat.data.get('blinkTimer').remove();
+        if (this.boat.data.get('stunTimer')) this.boat.data.get('stunTimer').remove();
+        this.repairBoatGroup.clear(true, true); // Remove active repair boats
+
+        // Display End Game text
+        const endTextStyle = { fontSize: '48px', fill: color, stroke: '#000', strokeThickness: 6, align: 'center' };
+        const restartTextStyle = { fontSize: '24px', fill: '#fff', stroke: '#000', strokeThickness: 4, align: 'center' };
+
+        this.add.text(this.sys.game.config.width / 2, this.sys.game.config.height / 2 - 50, message, endTextStyle).setOrigin(0.5);
+        this.add.text(this.sys.game.config.width / 2, this.sys.game.config.height / 2 + 20, 'Click to Restart', restartTextStyle).setOrigin(0.5);
+
+        // Use 'pointerdown' which works for both mouse and touch
+        this.input.once('pointerdown', () => {
+            // Reset relevant sound state before restarting
+            if (this.backgroundMusic && this.backgroundMusic.isPaused) {
+                 // Decide if music should resume on restart or require interaction again
+                 // this.backgroundMusic.resume(); // Option 1: Resume immediately
+                 // Option 2: Do nothing, let the create() logic handle interaction start
+            }
+            this.scene.restart();
+        });
+    }
+
+    gameOver() {
+        this.endGame('GAME OVER', '#ff0000'); // Red color for game over
+    }
+
+     winGame() {
+        this.endGame('YOU WON!', '#00ff00'); // Green color for win
+    }
+}
+
+// --- Phaser Game Configuration ---
+const config = {
+    type: Phaser.AUTO, // Use WebGL if available, otherwise Canvas
+    width: 800,
+    height: 600,
+    // parent: 'phaser-game-container', // Optional: Specify a div ID to contain the canvas
+    physics: {
+        default: 'arcade',
+        arcade: {
+            // debug: true, // Set true for physics debugging visuals (bounding boxes, velocity)
+            gravity: { y: 0 } // Top-down game, no gravity needed
+        }
+    },
+    scene: [MainScene], // Add scene to the game
+    // Ensure audio context is created on user interaction if needed
+    audio: {
+        disableWebAudio: false // Use Web Audio API if available
+    }
+};
+
+// --- Initialize Game ---
+// Wait for the DOM to be ready before creating the game instance
+window.onload = () => {
+    const game = new Phaser.Game(config);
+};
