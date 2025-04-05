@@ -12,7 +12,8 @@ class MainScene extends Phaser.Scene {
         this.heartsText = null;
         this.fruitsText = null;
         this.backgroundMusic = null;
-        this.repairBoatTimer = null; // Keep track of the timer
+        this.repairBoatTimer = null; // Keep track of the repair boat timer
+        this.sharkSpawnTimer = null; // Keep track of the shark spawn timer
 
         // Game constants
         this.BOAT_SPEED = 180; // pixels per second
@@ -178,7 +179,73 @@ class MainScene extends Phaser.Scene {
             callbackScope: this,
             loop: true
         });
+
+        // Shark Spawning Timer (random interval between 2-5 seconds)
+        this.sharkSpawnTimer = this.time.addEvent({
+            delay: Phaser.Math.Between(2000, 5000),
+            callback: this.spawnShark,
+            callbackScope: this,
+            loop: true
+        });
     }
+
+    spawnShark() {
+        // Don't spawn if game is paused
+        if (!this.physics.world.running) return;
+
+        const gameWidth = this.sys.game.config.width;
+        const gameHeight = this.sys.game.config.height;
+        const speed = this.OBSTACLE_SPEED_MAP['shark'];
+        const sharkWidth = 120;
+        const approxSharkHeight = sharkWidth / 2; // Approximate for positioning
+
+        // Random Y position
+        const randomY = Phaser.Math.Between(approxSharkHeight / 2, gameHeight - approxSharkHeight / 2);
+
+        // Random start side
+        const startSide = Phaser.Math.Between(0, 1);
+        let startX, velocityX;
+
+        if (startSide === 0) { // Start Left
+            startX = -sharkWidth / 2; // Start off-screen left
+            velocityX = speed;
+        } else { // Start Right
+            startX = gameWidth + sharkWidth / 2; // Start off-screen right
+            velocityX = -speed;
+        }
+
+        const shark = this.obstacles.create(startX, randomY, 'shark_image');
+        if (!shark) return; // Could happen if group was destroyed?
+
+        shark.displayWidth = sharkWidth;
+        shark.scaleY = shark.scaleX;
+        shark.body.setSize(shark.displayWidth * 0.85, shark.displayHeight * 0.85);
+
+        shark.setVelocityX(velocityX);
+        shark.setVelocityY(0);
+        shark.setBounceX(1); // Bounce off world bounds if enabled, otherwise just moves across
+        shark.setBounceY(0);
+        shark.setCollideWorldBounds(true); // Keep this to make it bounce
+        shark.setImmovable(true);
+
+        // Fade out tween
+        this.tweens.add({
+            targets: shark,
+            alpha: 0,
+            duration: Phaser.Math.Between(10000, 15000), // Fade over 10-15 seconds
+            ease: 'Linear',
+            onComplete: () => {
+                // Check if shark still exists before destroying
+                if (shark && shark.active) {
+                    shark.destroy();
+                }
+            }
+        });
+
+        // Reset timer delay for next spawn
+        this.sharkSpawnTimer.delay = Phaser.Math.Between(2000, 5000);
+    }
+
 
     resetBoatState() {
         this.boat.data.set('hearts', this.MAX_HEARTS);
@@ -214,54 +281,24 @@ class MainScene extends Phaser.Scene {
         const gameWidth = this.sys.game.config.width;
         const gameHeight = this.sys.game.config.height;
 
+        // Create only non-shark obstacles initially
         initialObstacles.forEach(obsData => {
+            if (obsData.type === 'shark') return; // Skip sharks here
+
             const speed = this.OBSTACLE_SPEED_MAP[obsData.type] || 100;
             let obstacle;
 
-            if (obsData.type === 'shark') {
-                // --- Shark: Horizontal Movement ---
-                const sharkWidth = 120; // Defined display width
-                // Calculate height based on aspect ratio after texture loads (approximate here or refine if needed)
-                const approxSharkHeight = sharkWidth / 2; // Assuming ~2:1 ratio based on previous sizing
+            // --- Other Obstacles: Vertical Movement ---
+            const initialY = Phaser.Math.Clamp(obsData.y, 30, gameHeight - 30);
+            const textureKey = obsData.type; // 'tornado' or 'wave'
+            obstacle = this.obstacles.create(obsData.x, initialY, textureKey);
 
-                // Random Y position (ensure fully visible)
-                const randomY = Phaser.Math.Between(approxSharkHeight / 2, gameHeight - approxSharkHeight / 2);
+            obstacle.body.setSize(30, 30); // Keep original size for rectangles
 
-                // Random start side (0 = left, 1 = right)
-                const startSide = Phaser.Math.Between(0, 1);
-                let startX, velocityX;
-
-                if (startSide === 0) { // Start Left
-                    startX = sharkWidth / 2; // Position based on center anchor
-                    velocityX = speed;
-                } else { // Start Right
-                    startX = gameWidth - sharkWidth / 2; // Position based on center anchor
-                    velocityX = -speed;
-                }
-
-                obstacle = this.obstacles.create(startX, randomY, 'shark_image');
-                obstacle.displayWidth = sharkWidth;
-                obstacle.scaleY = obstacle.scaleX; // Maintain aspect ratio
-                obstacle.body.setSize(obstacle.displayWidth * 0.85, obstacle.displayHeight * 0.85); // Adjust physics body
-
-                obstacle.setVelocityX(velocityX); // Set horizontal velocity
-                obstacle.setVelocityY(0);         // No vertical velocity
-                obstacle.setBounceX(1);           // Bounce horizontally
-                obstacle.setBounceY(0);           // Don't bounce vertically
-
-            } else {
-                // --- Other Obstacles: Vertical Movement ---
-                const initialY = Phaser.Math.Clamp(obsData.y, 30, gameHeight - 30);
-                const textureKey = obsData.type; // 'tornado' or 'wave'
-                obstacle = this.obstacles.create(obsData.x, initialY, textureKey);
-
-                obstacle.body.setSize(30, 30); // Keep original size for rectangles
-
-                obstacle.setVelocityY(speed * (Math.random() < 0.5 ? 1 : -1)); // Vertical velocity
-                obstacle.setVelocityX(0); // No horizontal velocity
-                obstacle.setBounceY(1); // Bounce vertically
-                obstacle.setBounceX(0); // Don't bounce horizontally
-            }
+            obstacle.setVelocityY(speed * (Math.random() < 0.5 ? 1 : -1)); // Vertical velocity
+            obstacle.setVelocityX(0); // No horizontal velocity
+            obstacle.setBounceY(1); // Bounce vertically
+            obstacle.setBounceX(0); // Don't bounce horizontally
 
             // Common properties for all obstacles
             obstacle.setCollideWorldBounds(true);
@@ -471,9 +508,16 @@ class MainScene extends Phaser.Scene {
 
         // Clear timers and remove active game objects that shouldn't persist
         if (this.repairBoatTimer) this.repairBoatTimer.remove();
+        if (this.sharkSpawnTimer) this.sharkSpawnTimer.remove(); // Clear shark timer
         if (this.boat.data.get('blinkTimer')) this.boat.data.get('blinkTimer').remove();
         if (this.boat.data.get('stunTimer')) this.boat.data.get('stunTimer').remove();
         this.repairBoatGroup.clear(true, true); // Remove active repair boats
+        // Also clear any active sharks immediately on game end
+        this.obstacles.children.each(obstacle => {
+            if (obstacle.texture.key === 'shark_image') {
+                obstacle.destroy();
+            }
+        });
 
         // Display End Game text
         const endTextStyle = { fontSize: '48px', fill: color, stroke: '#000', strokeThickness: 6, align: 'center' };
