@@ -515,7 +515,7 @@ class MainScene extends Phaser.Scene {
             this.backgroundMusic.pause(); // Pause instead of stop for potential restart
         }
         this.boat.setVelocity(0,0); // Stop boat movement visually
-        this.boat.setTint(0xff0000); // Red tint on game over/win for consistency
+        this.boat.setTint(color === '#00ff00' ? 0x00ff00 : 0xff0000); // Green tint for win, red for loss
 
         // Clear timers and remove active game objects that shouldn't persist
         if (this.repairBoatTimer) this.repairBoatTimer.remove();
