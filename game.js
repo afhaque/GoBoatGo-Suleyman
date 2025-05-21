@@ -29,6 +29,7 @@ class MainScene extends Phaser.Scene {
         this.REPAIR_BOAT_DURATION = 5000; // ms
         this.BLINK_DURATION = 1000; // ms
         this.STUN_DURATION = 1000; // ms
+        this.DELIVERY_COOLDOWN = 500; // ms
     }
 
     preload() {
@@ -264,6 +265,8 @@ class MainScene extends Phaser.Scene {
         this.boat.data.set('portFruits', 0);
         this.boat.data.set('isBlinking', false);
         this.boat.data.set('isStunned', false);
+        this.boat.data.set('lastDeliveryTime', 0);
+        this.boat.data.set('hasCollectedFruits', false);  // Track if fruits were legitimately collected
         // Clear any existing timers associated with the boat's data
         if (this.boat.data.get('blinkTimer')) this.boat.data.get('blinkTimer').remove();
         if (this.boat.data.get('stunTimer')) this.boat.data.get('stunTimer').remove();
@@ -381,6 +384,7 @@ class MainScene extends Phaser.Scene {
     collectFruit(boat, island) {
         if (boat.data.get('fruits') === 0) {  // Only collect if we have no fruits
             boat.data.set('fruits', this.FRUITS_PER_TRIP);
+            boat.data.set('hasCollectedFruits', true);  // Mark fruits as legitimately collected
             this.updateStatsUI();
             // Optional: Add a sound effect
             // this.sound.play('collect_sound');
@@ -388,12 +392,25 @@ class MainScene extends Phaser.Scene {
     }
 
     deliverFruit(boat, port) {
+        const currentTime = this.time.now;
+        const lastDeliveryTime = boat.data.get('lastDeliveryTime') || 0;
+        
+        // Check if enough time has passed since last delivery
+        if (currentTime - lastDeliveryTime < this.DELIVERY_COOLDOWN) {
+            return;
+        }
+
         const currentFruits = boat.data.get('fruits');
-        if (currentFruits > 0) {
+        const hasCollectedFruits = boat.data.get('hasCollectedFruits');
+
+        // Only allow delivery if fruits were legitimately collected from the island
+        if (currentFruits > 0 && hasCollectedFruits) {
             const currentPortFruits = boat.data.get('portFruits');
             const newPortFruits = currentPortFruits + currentFruits;
             boat.data.set('portFruits', newPortFruits);
             boat.data.set('fruits', 0);
+            boat.data.set('hasCollectedFruits', false);  // Reset collection flag
+            boat.data.set('lastDeliveryTime', currentTime);
             this.updateStatsUI();
             // Optional: Add a sound effect
             // this.sound.play('deliver_sound');
@@ -419,6 +436,9 @@ class MainScene extends Phaser.Scene {
         if (currentFruits > 0) {
             const fruitsLost = Math.min(currentFruits, Phaser.Math.Between(1, 3));
             boat.data.set('fruits', currentFruits - fruitsLost);
+            if (currentFruits - fruitsLost <= 0) {
+                boat.data.set('hasCollectedFruits', false);  // Reset collection flag if all fruits are lost
+            }
         }
 
         boat.data.set('isBlinking', true);
