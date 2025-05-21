@@ -35,6 +35,7 @@ class MainScene extends Phaser.Scene {
         this.load.image('port', 'assets/Port.png');
         this.load.audio('game_music', 'assets/game_music.mp3');
         this.load.image('boat', 'assets/boat.png'); // Load boat image
+        this.load.image('fruit_island', 'assets/fruit_island.png'); // Load boat image
         this.load.image('shark_image', 'assets/shark.png'); // Load shark image
 
         // Generate simple textures for missing assets
@@ -45,10 +46,10 @@ class MainScene extends Phaser.Scene {
         // Boat texture is now loaded from image
 
         // Fruit Island Texture (Green Rectangle)
-        let islandGraphics = this.make.graphics({ fillStyle: { color: 0x00ff00 } });
-        islandGraphics.fillRect(0, 0, 60, 100);
-        islandGraphics.generateTexture('island_texture', 60, 100);
-        islandGraphics.destroy();
+        // let islandGraphics = this.make.graphics({ fillStyle: { color: 0x00ff00 } });
+        // islandGraphics.fillRect(0, 0, 60, 100);
+        // islandGraphics.generateTexture('island_texture', 60, 100);
+        // islandGraphics.destroy();
 
         // Obstacle Textures (Colored Rectangles)
         // Shark texture is now loaded from image
@@ -131,8 +132,12 @@ class MainScene extends Phaser.Scene {
         this.port.setDisplaySize(150, 150); // Set display size to match original intent
 
         // Fruit Island (adjust position)
-        this.fruitIsland = this.physics.add.staticImage(gameWidth - 60, gameHeight / 2, 'island_texture'); // Centered x = (W-90) + 60/2 = W-60
-        this.add.text(this.fruitIsland.x, this.fruitIsland.y - this.fruitIsland.height/2 - 15, 'Fruit Island', { fontSize: '16px', fill: '#fff', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5);
+        // this.fruitIsland = this.physics.add.staticImage(gameWidth - 60, gameHeight / 2, 'island_texture'); // Centered x = (W-90) + 60/2 = W-60
+        // this.add.text(this.fruitIsland.x, this.fruitIsland.y - this.fruitIsland.height/2 - 15, 'Fruit Island', { fontSize: '16px', fill: '#fff', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5);
+
+        this.fruitIsland = this.physics.add.staticImage(gameWidth - 75, gameHeight / 2, 'fruit_island'); // Use 'fruit_island' image, x = gameWidth - 150/2
+        this.fruitIsland.setDisplaySize(150, 150); // Set display size
+        this.add.text(this.fruitIsland.x, this.fruitIsland.y - this.fruitIsland.displayHeight / 2 - 15, 'Fruit Island', { fontSize: '16px', fill: '#fff', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5);
 
 
         // Boat
@@ -374,7 +379,7 @@ class MainScene extends Phaser.Scene {
     }
 
     collectFruit(boat, island) {
-        if (boat.data.get('fruits') < this.FRUITS_PER_TRIP) {
+        if (boat.data.get('fruits') === 0) {  // Only collect if we have no fruits
             boat.data.set('fruits', this.FRUITS_PER_TRIP);
             this.updateStatsUI();
             // Optional: Add a sound effect

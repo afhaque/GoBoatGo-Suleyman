@@ -9,4 +9,4 @@ This is a game where the objective is to navigate a boat through a series of obs
 <!-- - Make the music of the game play game_music.mp3 -->
 <!-- - When the boat hits an obstacle it should blink for a second and be stunned for a second. It should not be returned to the port immediately. During the period where it is blinking it should be able to move freely. -->
 <!-- - Add a repair boat that occasionally pops up. This boat is one that should have hearts on it to signify that it can help you heal. -->
-- Modify the port to use the Port.png file in the assets folder. Make the sure the port uses the same image dimensions as the original image. 
+<!-- - Modify the port to use the Port.png file in the assets folder. Make the sure the port uses the same image dimensions as the original image.  -->
